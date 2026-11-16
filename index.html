@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Quest: Arsitek Data - Game Edukasi Microteaching UPI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Merriweather & Open Sans (Gaya Maxwell) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Open+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --mx-blue-primary: #286090;
+            --mx-blue-dark: #1d4b73;
+            --mx-blue-light: #ebf3fa;
+            --mx-bg: #f4f6fa;
+            --mx-card-border: #dbe2ea;
+            --mx-text-dark: #1e293b;
+        }
+
+        body {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--mx-bg);
+            color: var(--mx-text-dark);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-heading {
+            font-family: 'Merriweather', Georgia, serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Maxwell Color Theme Buttons */
+        .btn-maxwell {
+            background-color: var(--mx-blue-primary);
+            color: #ffffff;
+            transition: all 0.15s ease;
+        }
+        .btn-maxwell:hover {
+            background-color: var(--mx-blue-dark);
+            box-shadow: 0 4px 10px rgba(40, 96, 144, 0.25);
+        }
+        .btn-maxwell:active {
+            transform: translateY(1px);
+        }
+
+        /* Interactive Draggable Game Cards */
+        .game-item-card {
+            background: #ffffff;
+            border: 1px solid var(--mx-card-border);
+            border-left: 4px solid var(--mx-blue-primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            cursor: grab;
+            touch-action: none;
+        }
+        .game-item-card:hover {
+            transform: translateY(-2px);
+            border-color: #94a3b8;
+            box-shadow: 0 6px 14px rgba(40, 96, 144, 0.12);
+        }
+        .game-item-card:active {
+            cursor: grabbing;
+        }
+        .game-item-card.selected {
+            border: 2px solid var(--mx-blue-primary) !important;
+            border-left: 6px solid var(--mx-blue-primary) !important;
+            background-color: var(--mx-blue-light) !important;
+            box-shadow: 0 6px 16px rgba(40, 96, 144, 0.25) !important;
+            transform: translateY(-3px) scale(1.02);
+        }
+        .dragging {
+            opacity: 0.45;
+            transform: scale(0.96);
+        }
+
+        /* Dropzones */
+        .game-dropzone {
+            background: #ffffff;
+            border: 2px dashed #cbd5e1;
+            transition: all 0.2s ease;
+        }
+        .game-dropzone.drag-active {
+            border-color: var(--mx-blue-primary) !important;
+            background-color: var(--mx-blue-light) !important;
+            transform: scale(1.01);
+        }
+
+        /* Animations */
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .shake-animation {
+            animation: shakeError 0.4s ease-in-out;
+        }
+
+        @keyframes popSuccess {
+            0% { transform: scale(0.92); opacity: 0.5; }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-animation {
+            animation: popSuccess 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Navigation Tab */
+        .tab-btn {
+            transition: all 0.15s ease;
+        }
+        .tab-btn.active {
+            background-color: #ffffff;
+            color: var(--mx-blue-primary);
+            font-weight: 700;
+            border-bottom: 3px solid var(--mx-blue-primary);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- TOP HEADER WITH MAXWELL SIGNATURE COLOR -->
+    <header class="bg-[#286090] text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- Game Title & University Badge -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-2xl flex-shrink-0">
+                    🧩
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-heading text-lg md:text-xl font-bold tracking-tight text-white">Database Quest: Arsitek Data</h1>
+                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-white/20 text-white">FPMIPA UPI</span>
+                    </div>
+                    <p class="text-xs text-blue-100 font-medium">Wahana Praktik & Uji Logika Sistem Basis Data</p>
+                </div>
+            </div>
+
+            <!-- Controls (Audio & Bantuan) -->
+            <div class="flex items-center gap-2">
+                <button id="btn-audio-toggle" onclick="toggleAudio()" class="px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition flex items-center gap-1.5" title="Aktif / Nonaktifkan Suara">
+                    🔊 Suara: Aktif
+                </button>
+                <button onclick="openHelpModal()" class="px-3 py-1.5 rounded bg-white text-[#286090] hover:bg-blue-50 text-xs font-bold transition shadow-sm flex items-center gap-1">
+                    💡 Cara Main
+                </button>
+            </div>
+
+        </div>
+
+        <!-- LEVEL TABS BAR (MAXWELL SUB-NAV) -->
+        <div class="bg-[#1d4b73] text-white/90 border-t border-blue-900/40">
+            <div class="max-w-6xl mx-auto px-4 flex flex-wrap items-center">
+                <button onclick="goToTab('lobby')" id="nav-lobby" class="tab-btn active py-2.5 px-4 text-xs md:text-sm font-semibold flex items-center gap-1.5">
+                    🏠 Menu Utama
+                </button>
+                <button onclick="goToTab('lvl1')" id="nav-lvl1" class="tab-btn py-2.5 px-4 text-xs md:text-sm font-semibold flex items-center gap-1.5">
+                    🍞 Level 1: Toko Roti (Data vs Info)
+                </button>
+                <button onclick="goToTab('lvl2')" id="nav-lvl2" class="tab-btn py-2.5 px-4 text-xs md:text-sm font-semibold flex items-center gap-1.5">
+                    🖥️ Level 2: 4 Pilar Sistem Basis Data
+                </button>
+                <button onclick="goToTab('lvl3')" id="nav-lvl3" class="tab-btn py-2.5 px-4 text-xs md:text-sm font-semibold flex items-center gap-1.5">
+                    🚀 Level 3: Konsultan DBMS Industri
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME WORKSPACE (CLEAN CENTERED LAYOUT) -->
+    <main class="max-w-6xl w-full mx-auto p-4 md:p-6 flex-1 flex flex-col justify-center">
+
+        <!-- ======================================================== -->
+        <!-- STUDENT PROFILE & HUD STATS BAR (COMPACT TOP BAR) -->
+        <!-- ======================================================== -->
+        <div id="student-hud-bar" class="bg-white border border-[#dbe2ea] rounded-xl p-3.5 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Input Identitas Siswa -->
+            <div class="flex flex-wrap items-center gap-3 text-xs">
+                <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-gray-500 uppercase text-[11px]">Siswa:</span>
+                    <input type="text" id="player-name-input" placeholder="Masukkan Nama Siswa..." class="border border-gray-300 rounded px-2.5 py-1 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#286090] w-44 md:w-52">
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-gray-500 uppercase text-[11px]">Kelas:</span>
+                    <input type="text" id="player-class-input" placeholder="Pendidikan Ilmu Komputer" class="border border-gray-300 rounded px-2.5 py-1 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#286090] w-36 md:w-44">
+                </div>
+            </div>
+
+            <!-- Live HUD Stats -->
+            <div class="flex items-center gap-3 text-xs font-bold">
+                <div class="flex items-center gap-1.5 bg-blue-50 text-[#286090] border border-blue-200 px-3 py-1 rounded-md">
+                    <span>⭐</span>
+                    <span class="text-gray-500">Poin:</span>
+                    <span id="hud-score-val" class="font-mono text-sm font-black">0</span>
+                </div>
+                <div id="hud-timer-badge" class="flex items-center gap-1.5 bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1 rounded-md transition-colors">
+                    <span>⏱️</span>
+                    <span class="text-gray-500">Waktu:</span>
+                    <span id="hud-timer-val" class="font-mono text-sm font-black">10:00</span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-md">
+                    <span>❤️</span>
+                    <span id="hud-lives-val" class="font-bold">3/3</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- SCREEN 0: LOBBY / PILIH TANTANGAN -->
+        <!-- ======================================================== -->
+        <section id="screen-lobby" class="bg-white border border-[#dbe2ea] rounded-xl p-6 md:p-8 shadow-sm space-y-6">
+            
+            <div class="text-center max-w-2xl mx-auto space-y-2">
+                <span class="inline-block px-3 py-0.5 rounded-full bg-blue-50 text-[#286090] border border-blue-200 text-xs font-bold uppercase tracking-wider">
+                    Modul Praktik Interaktif Microteaching
+                </span>
+                <h2 class="font-heading text-2xl md:text-3xl font-bold text-gray-900">
+                    Selamat Datang di Arena Uji Arsitek Data
+                </h2>
+                <p class="text-xs md:text-sm text-gray-600 leading-relaxed">
+                    Uji pemahaman Anda mengenai perbedaan data mentah vs informasi, perancangan arsitektur sistem basis data, dan pemilihan software DBMS industri melalui simulasi interaktif di bawah ini:
+                </p>
+            </div>
+
+            <!-- 3 Game Level Cards (Maxwell Style) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+                
+                <!-- Level Card 1 -->
+                <div class="border border-gray-200 hover:border-[#286090] rounded-xl p-5 bg-white transition shadow-sm flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-3xl">🍞</span>
+                            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-800">LEVEL 1</span>
+                        </div>
+                        <h3 class="font-bold text-base text-gray-900 group-hover:text-[#286090] transition mb-1.5">
+                            Krisis Toko Roti (Data vs Informasi)
+                        </h3>
+                        <p class="text-xs text-gray-600 leading-relaxed mb-4">
+                            Toko roti punya 1.000 pelanggan dicatat manual di buku tebal. Bantu kasir memilah catatan fakta mentah (data) dan hasil olahan bermakna (informasi) agar promo diskon ultah berjalan!
+                        </p>
+                    </div>
+                    <button onclick="goToTab('lvl1')" class="btn-maxwell w-full py-2.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5">
+                        <span>Mulai Kasus Toko Roti</span>
+                        <span>»</span>
+                    </button>
+                </div>
+
+                <!-- Level Card 2 -->
+                <div class="border border-gray-200 hover:border-[#286090] rounded-xl p-5 bg-white transition shadow-sm flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-3xl">🖥️</span>
+                            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-800">LEVEL 2</span>
+                        </div>
+                        <h3 class="font-bold text-base text-gray-900 group-hover:text-[#286090] transition mb-1.5">
+                            Rakit 4 Pilar Server Basis Data
+                        </h3>
+                        <p class="text-xs text-gray-600 leading-relaxed mb-4">
+                            Server padam! Rakit 4 pilar arsitektur: Hardware, Software DBMS, Data terintegrasi, dan Brainware (User). Waspadai kartu jebakan data ganda redundan!
+                        </p>
+                    </div>
+                    <button onclick="goToTab('lvl2')" class="btn-maxwell w-full py-2.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5">
+                        <span>Mulai Rakit Server</span>
+                        <span>»</span>
+                    </button>
+                </div>
+
+                <!-- Level Card 3 -->
+                <div class="border border-gray-200 hover:border-[#286090] rounded-xl p-5 bg-white transition shadow-sm flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-3xl">🚀</span>
+                            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">LEVEL 3</span>
+                        </div>
+                        <h3 class="font-bold text-base text-gray-900 group-hover:text-[#286090] transition mb-1.5">
+                            Konsultan DBMS Industri Digital
+                        </h3>
+                        <p class="text-xs text-gray-600 leading-relaxed mb-4">
+                            Tiga mitra industri (Tokopedia E-Commerce, Mobile Kasir Android, dan Netflix) meminta solusi. Pasangkan MySQL, SQLite, dan PostgreSQL yang paling tepat!
+                        </p>
+                    </div>
+                    <button onclick="goToTab('lvl3')" class="btn-maxwell w-full py-2.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5">
+                        <span>Mulai Konsultasi DBMS</span>
+                        <span>»</span>
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SCREEN 1: LEVEL 1 - TOKO ROTI (DATA VS INFORMASI) -->
+        <!-- ======================================================== -->
+        <section id="screen-lvl1" class="hidden bg-white border border-[#dbe2ea] rounded-xl p-6 md:p-8 shadow-sm space-y-5">
+            
+            <!-- Header Level 1 -->
+            <div class="border-b border-gray-200 pb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase">LEVEL 1 • APERSEPSI MATERI</span>
+                    <h2 class="font-heading text-xl md:text-2xl font-bold text-gray-900 mt-1">
+                        Kasus Toko Roti: Memilah Fakta Mentah (Data) vs Informasi
+                    </h2>
+                </div>
+                <span id="lvl1-counter-badge" class="bg-blue-50 border border-blue-200 text-[#286090] font-mono font-bold text-xs px-3 py-1 rounded">
+                    Sisa Kartu: 6/6
+                </span>
+            </div>
+
+            <p class="text-xs md:text-sm text-gray-600 leading-relaxed">
+                Kasir toko roti menemukan 6 catatan berserakan di atas meja kasir. Analisis setiap catatan di bawah ini, lalu pindahkan ke <strong>Wadah DATA</strong> atau <strong>Wadah INFORMASI</strong> yang sesuai.
+            </p>
+
+            <!-- Gameplay Layout: Baki Kiri vs Wadah Kanan -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start pt-2">
+                
+                <!-- Baki Kiri: Item di Meja Kasir -->
+                <div class="md:col-span-5 bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+                        <span class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>🧾</span> Catatan di Meja Kasir
+                        </span>
+                        <span class="text-[10px] text-gray-500">Seret atau Klik</span>
+                    </div>
+                    <div id="lvl1-cards-tray" class="space-y-3 min-h-[300px]">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Wadah Kanan: Dropzones Data vs Informasi -->
+                <div class="md:col-span-7 flex flex-col gap-4">
+                    
+                    <!-- Wadah Data -->
+                    <div id="zone-data" class="game-dropzone p-4 rounded-lg flex flex-col gap-2" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl1(event, 'data')" onclick="onClickZoneLvl1('data')">
+                        <div class="flex items-center justify-between border-b border-dashed border-gray-300 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">📁</span>
+                                <div>
+                                    <h4 class="font-bold text-xs text-amber-900 uppercase">WADAH: DATA (FAKTA MENTAH)</h4>
+                                    <p class="text-[11px] text-gray-500">Fakta yang berdiri sendiri, belum ada konteks arti, kasir belum tahu maksudnya.</p>
+                                </div>
+                            </div>
+                            <span id="badge-lvl1-data" class="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">0 Diterima</span>
+                        </div>
+                        <div id="slot-lvl1-data" class="min-h-[75px] bg-white rounded border border-gray-200 p-2.5 flex flex-wrap gap-2 items-center">
+                            <span class="text-xs text-gray-400 italic">Seret atau klik kartu fakta mentah ke sini...</span>
+                        </div>
+                    </div>
+
+                    <!-- Wadah Informasi -->
+                    <div id="zone-info" class="game-dropzone p-4 rounded-lg flex flex-col gap-2" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl1(event, 'info')" onclick="onClickZoneLvl1('info')">
+                        <div class="flex items-center justify-between border-b border-dashed border-gray-300 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">📊</span>
+                                <div>
+                                    <h4 class="font-bold text-xs text-emerald-900 uppercase">WADAH: INFORMASI (HASIL OLAHAN)</h4>
+                                    <p class="text-[11px] text-gray-500">Data yang telah diolah basis data sehingga bermakna dan siap untuk aksi diskon.</p>
+                                </div>
+                            </div>
+                            <span id="badge-lvl1-info" class="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">0 Diterima</span>
+                        </div>
+                        <div id="slot-lvl1-info" class="min-h-[75px] bg-white rounded border border-gray-200 p-2.5 flex flex-wrap gap-2 items-center">
+                            <span class="text-xs text-gray-400 italic">Seret atau klik kartu informasi terolah ke sini...</span>
+                        </div>
+                    </div>
+
+                    <!-- Catatan Pengajar / Feedback -->
+                    <div class="bg-blue-50 border-l-4 border-[#286090] p-3 rounded-r text-xs text-blue-900">
+                        <strong class="block mb-0.5 font-bold">Catatan Nalar Guru:</strong>
+                        <span id="lvl1-feedback-text">Pilihlah kartu di sebelah kiri, kemudian letakkan di wadah yang tepat untuk membuktikan pemahaman Anda.</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SCREEN 2: LEVEL 2 - RAKIT RAK SERVER (4 KOMPONEN) -->
+        <!-- ======================================================== -->
+        <section id="screen-lvl2" class="hidden bg-white border border-[#dbe2ea] rounded-xl p-6 md:p-8 shadow-sm space-y-5">
+            
+            <div class="border-b border-gray-200 pb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <span class="bg-blue-100 text-[#286090] text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase">LEVEL 2 • ARSITEKTUR KOMPONEN</span>
+                    <h2 class="font-heading text-xl md:text-2xl font-bold text-gray-900 mt-1">
+                        Merakit 4 Pilar Sistem Basis Data
+                    </h2>
+                </div>
+                <span id="lvl2-status-badge" class="bg-rose-50 border border-rose-200 text-rose-700 font-mono font-bold text-xs px-3 py-1 rounded">
+                    Status: Server Padam (0/4)
+                </span>
+            </div>
+
+            <p class="text-xs md:text-sm text-gray-600 leading-relaxed">
+                Sistem basis data terpusat membutuhkan 4 pilar agar dapat beroperasi: <strong>Hardware, Software (DBMS), Data terintegrasi, dan Brainware (User)</strong>. Pasangkan komponen yang sah ke rak server dan singkirkan benda pengganggu (jebakan)!
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start pt-2">
+                
+                <!-- Baki Komponen (Kiri) -->
+                <div class="md:col-span-4 bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+                        <span class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>🧰</span> Komponen Gudang
+                        </span>
+                        <span class="text-[10px] text-gray-500">Pilih Komponen</span>
+                    </div>
+                    <div id="lvl2-cards-tray" class="space-y-3 min-h-[300px]">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- 4 Slot Rak Server (Kanan) -->
+                <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    
+                    <!-- Slot Hardware -->
+                    <div id="zone-hw" class="game-dropzone p-3.5 rounded-lg flex flex-col justify-between min-h-[140px]" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl2(event, 'hardware')" onclick="onClickZoneLvl2('hardware')">
+                        <div class="flex items-center justify-between border-b border-dashed border-gray-300 pb-1.5">
+                            <span class="font-bold text-xs text-sky-900">1. HARDWARE</span>
+                            <span id="badge-hw" class="text-[10px] font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">KOSONG</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 my-1">Server fisik, prosesor, & disk penyimpanan.</p>
+                        <div id="slot-hw" class="bg-white p-2.5 rounded border border-gray-200 text-center text-xs text-gray-400 italic">
+                            Tarik komponen Hardware ke sini...
+                        </div>
+                    </div>
+
+                    <!-- Slot Software -->
+                    <div id="zone-sw" class="game-dropzone p-3.5 rounded-lg flex flex-col justify-between min-h-[140px]" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl2(event, 'software')" onclick="onClickZoneLvl2('software')">
+                        <div class="flex items-center justify-between border-b border-dashed border-gray-300 pb-1.5">
+                            <span class="font-bold text-xs text-purple-900">2. SOFTWARE / DBMS</span>
+                            <span id="badge-sw" class="text-[10px] font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">KOSONG</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 my-1">OS Server & Software DBMS pengelola query.</p>
+                        <div id="slot-sw" class="bg-white p-2.5 rounded border border-gray-200 text-center text-xs text-gray-400 italic">
+                            Tarik Software DBMS ke sini...
+                        </div>
+                    </div>
+
+                    <!-- Slot Data -->
+                    <div id="zone-dt" class="game-dropzone p-3.5 rounded-lg flex flex-col justify-between min-h-[140px]" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl2(event, 'data')" onclick="onClickZoneLvl2('data')">
+                        <div class="flex items-center justify-between border-b border-dashed border-gray-300 pb-1.5">
+                            <span class="font-bold text-xs text-amber-900">3. DATA TERPUSAT</span>
+                            <span id="badge-dt" class="text-[10px] font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">KOSONG</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 my-1">Skema relasi tabel bebas dari data ganda.</p>
+                        <div id="slot-dt" class="bg-white p-2.5 rounded border border-gray-200 text-center text-xs text-gray-400 italic">
+                            Tarik Kumpulan Data ke sini...
+                        </div>
+                    </div>
+
+                    <!-- Slot User -->
+                    <div id="zone-usr" class="game-dropzone p-3.5 rounded-lg flex flex-col justify-between min-h-[140px]" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl2(event, 'user')" onclick="onClickZoneLvl2('user')">
+                        <div class="flex items-center justify-between border-b border-dashed border-gray-300 pb-1.5">
+                            <span class="font-bold text-xs text-emerald-900">4. USER / BRAINWARE</span>
+                            <span id="badge-usr" class="text-[10px] font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">KOSONG</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 my-1">DBA, Programmer, & Kasir pengguna sistem.</p>
+                        <div id="slot-usr" class="bg-white p-2.5 rounded border border-gray-200 text-center text-xs text-gray-400 italic">
+                            Tarik Pengguna (DBA/User) ke sini...
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- SCREEN 3: LEVEL 3 - KONSULTAN DBMS INDUSTRI -->
+        <!-- ======================================================== -->
+        <section id="screen-lvl3" class="hidden bg-white border border-[#dbe2ea] rounded-xl p-6 md:p-8 shadow-sm space-y-5">
+            
+            <div class="border-b border-gray-200 pb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono uppercase">LEVEL 3 • IMPLEMENTASI INDUSTRI</span>
+                    <h2 class="font-heading text-xl md:text-2xl font-bold text-gray-900 mt-1">
+                        Pemilihan Software DBMS Sesuai Karakteristik Klien
+                    </h2>
+                </div>
+                <span id="lvl3-counter-badge" class="bg-gray-100 border border-gray-300 text-gray-700 font-mono font-bold text-xs px-3 py-1 rounded">
+                    Klien Terlayani: 0/3
+                </span>
+            </div>
+
+            <p class="text-xs md:text-sm text-gray-600 leading-relaxed">
+                Tiga mitra industri terkemuka membutuhkan solusi sistem basis data. Analisis kebutuhan masing-masing mitra dan pasangkan software DBMS (<strong>MySQL, SQLite, atau PostgreSQL</strong>) yang paling optimal.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start pt-2">
+                
+                <!-- Pilihan Software DBMS Box (Kiri) -->
+                <div class="md:col-span-4 bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+                        <span class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>💿</span> Katalog Software DBMS
+                        </span>
+                        <span class="text-[10px] text-gray-500">Pilih Software</span>
+                    </div>
+                    <div id="lvl3-cards-tray" class="space-y-3 min-h-[300px]">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- 3 Klien Industri (Kanan) -->
+                <div class="md:col-span-8 flex flex-col gap-4">
+                    
+                    <!-- Klien 1: Tokopedia / Shopee -->
+                    <div id="zone-client-web" class="game-dropzone p-4 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl3(event, 'mysql')" onclick="onClickZoneLvl3('mysql')">
+                        <div class="text-left">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-lg">🛒</span>
+                                <h4 class="font-bold text-xs text-gray-900 uppercase">Tokopedia & Shopee (E-Commerce Web)</h4>
+                            </div>
+                            <p class="text-[11px] text-gray-600">
+                                "Kami butuh software DBMS paling populer di dunia web open-source untuk katalog produk jutaan toko online."
+                            </p>
+                        </div>
+                        <div id="slot-client-web" class="w-full sm:w-48 bg-white border border-gray-300 rounded p-2.5 text-center text-xs text-gray-400 italic flex-shrink-0">
+                            Pasangkan DBMS di sini...
+                        </div>
+                    </div>
+
+                    <!-- Klien 2: Mobile Android -->
+                    <div id="zone-client-mobile" class="game-dropzone p-4 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl3(event, 'sqlite')" onclick="onClickZoneLvl3('sqlite')">
+                        <div class="text-left">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-lg">📱</span>
+                                <h4 class="font-bold text-xs text-gray-900 uppercase">Aplikasi Kasir Mobile (Android / Tablet)</h4>
+                            </div>
+                            <p class="text-[11px] text-gray-600">
+                                "Aplikasi kasir ini berjalan di tablet HP kasir tanpa server terpisah. Butuh database embedded super ringan."
+                            </p>
+                        </div>
+                        <div id="slot-client-mobile" class="w-full sm:w-48 bg-white border border-gray-300 rounded p-2.5 text-center text-xs text-gray-400 italic flex-shrink-0">
+                            Pasangkan DBMS di sini...
+                        </div>
+                    </div>
+
+                    <!-- Klien 3: Netflix Enterprise -->
+                    <div id="zone-client-enterprise" class="game-dropzone p-4 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDropLvl3(event, 'postgresql')" onclick="onClickZoneLvl3('postgresql')">
+                        <div class="text-left">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-lg">🎬</span>
+                                <h4 class="font-bold text-xs text-gray-900 uppercase">Netflix & Bank (Enterprise Skala Besar)</h4>
+                            </div>
+                            <p class="text-[11px] text-gray-600">
+                                "Sistem kami mengelola miliaran riwayat streaming & transaksi perbankan dengan konkurensi data tingkat tinggi."
+                            </p>
+                        </div>
+                        <div id="slot-client-enterprise" class="w-full sm:w-48 bg-white border border-gray-300 rounded p-2.5 text-center text-xs text-gray-400 italic flex-shrink-0">
+                            Pasangkan DBMS di sini...
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ======================================================== -->
+    <!-- MODAL SELESAI LEVEL / MISI (MAXWELL CLEAN DIALOG) -->
+    <!-- ======================================================== -->
+    <div id="modal-victory" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border-t-4 border-[#286090] rounded-xl max-w-lg w-full p-6 md:p-7 shadow-2xl space-y-4">
+            
+            <div class="flex items-center gap-3 border-b border-gray-200 pb-3">
+                <div class="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                    ✓
+                </div>
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                        Tantangan Selesai
+                    </span>
+                    <h3 class="font-heading text-lg font-bold text-gray-900" id="res-modal-title">Tantangan Berhasil Dituntaskan!</h3>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-600 leading-relaxed" id="res-modal-desc">
+                Siswa berhasil membuktikan pemahaman konsep sistem basis data dengan tepat dan memenuhi capaian pembelajaran microteaching.
+            </p>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3.5 text-xs space-y-2 font-mono">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Nama Siswa:</span>
+                    <span id="res-modal-name" class="font-bold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Waktu Pengerjaan:</span>
+                    <span id="res-modal-time" class="font-bold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Total Skor Akhir:</span>
+                    <span id="res-modal-score" class="font-bold text-[#286090] text-sm"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="copyResultsWhatsApp()" class="border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs font-bold py-2.5 px-3.5 rounded-lg transition flex items-center gap-1.5">
+                    <span>📋</span> Salin Hasil ke WhatsApp
+                </button>
+                <button onclick="closeModalAndNext()" class="btn-maxwell text-xs font-bold py-2.5 px-4 rounded-lg transition">
+                    Lanjut Tantangan Berikutnya »
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL PANDUAN CARA BERMAIN -->
+    <!-- ======================================================== -->
+    <div id="modal-help" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="closeHelpModal()">
+        <div class="bg-white border-t-4 border-[#286090] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+                <h3 class="font-heading font-bold text-base text-gray-900">Panduan Praktik Siswa</h3>
+                <button onclick="closeHelpModal()" class="text-gray-400 hover:text-gray-600 font-bold text-sm">✕</button>
+            </div>
+            <div class="space-y-3 text-xs text-gray-600 leading-relaxed">
+                <div class="flex gap-2.5">
+                    <span class="w-6 h-6 rounded bg-blue-100 text-[#286090] font-bold flex items-center justify-center flex-shrink-0 font-mono">1</span>
+                    <p><strong>Dua Mode Interaksi:</strong> Seret (drag & drop) kartu ke wadah tujuan, ATAU klik kartu sekali lalu klik wadah tujuan (sangat praktis untuk layar sentuh!).</p>
+                </div>
+                <div class="flex gap-2.5">
+                    <span class="w-6 h-6 rounded bg-blue-100 text-[#286090] font-bold flex items-center justify-center flex-shrink-0 font-mono">2</span>
+                    <p><strong>Uji Nalar Langsung:</strong> Kartu salah wadah akan memicu pesan evaluasi mengapa item tersebut tidak cocok.</p>
+                </div>
+                <div class="flex gap-2.5">
+                    <span class="w-6 h-6 rounded bg-blue-100 text-[#286090] font-bold flex items-center justify-center flex-shrink-0 font-mono">3</span>
+                    <p><strong>Waspadai Jebakan:</strong> Di Level 2, hindari menaruh benda asing seperti kopi atau catatan ganda redundan ke dalam server!</p>
+                </div>
+            </div>
+            <button onclick="closeHelpModal()" class="btn-maxwell w-full py-2 rounded-lg text-xs font-bold">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+
+    <!-- FOOTER CLEAN -->
+    <footer class="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500 mt-8">
+        Media Pembelajaran Microteaching Mata Kuliah Pendidikan Ilmu Komputer FPMIPA UPI • Tema Maxwell Clean Blue
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <script>
+        /**
+         * 1. AUDIO SYNTHESIZER
+         */
+        const SoundEngine = {
+            ctx: null,
+            enabled: true,
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) this.ctx = new AudioContext();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playClick() {
+                if (!this.enabled) return;
+                this.init(); if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(750, this.ctx.currentTime + 0.04);
+                gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.04);
+            },
+            playDing() {
+                if (!this.enabled) return;
+                this.init(); if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.14, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.06); osc.stop(now + idx * 0.06 + 0.22);
+                });
+            },
+            playBuzzer() {
+                if (!this.enabled) return;
+                this.init(); if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(110, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+            },
+            playVictoryFanfare() {
+                if (!this.enabled) return;
+                this.init(); if (!this.ctx) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.12);
+                    gain.gain.setValueAtTime(0.16, this.ctx.currentTime + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.12 + 0.35);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + idx * 0.12);
+                    osc.stop(this.ctx.currentTime + idx * 0.12 + 0.35);
+                });
+            }
+        };
+
+        function toggleAudio() {
+            SoundEngine.enabled = !SoundEngine.enabled;
+            const btn = document.getElementById('btn-audio-toggle');
+            btn.innerText = SoundEngine.enabled ? '🔊 Suara: Aktif' : '🔇 Suara: Nonaktif';
+        }
+
+        /**
+         * 2. STATE MANAGER & TAB SWITCHER (TIMER 10 MENIT PER LEVEL)
+         */
+        const LEVEL_DURATION = 600; // 10 menit = 600 detik per level
+        let currentTab = 'lobby';
+        let totalScore = 0;
+        let lives = 3;
+        let timeRemaining = LEVEL_DURATION;
+        let timeElapsedInLevel = 0;
+        let timerInterval = null;
+        let selectedCardId = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initLevel1();
+            initLevel2();
+            initLevel3();
+        });
+
+        function resetLevelTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timeRemaining = LEVEL_DURATION;
+            timeElapsedInLevel = 0;
+            renderTimerHUD();
+        }
+
+        function renderTimerHUD() {
+            const mins = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
+            const secs = String(timeRemaining % 60).padStart(2, '0');
+            const timerEl = document.getElementById('hud-timer-val');
+            const badgeEl = document.getElementById('hud-timer-badge');
+
+            if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+
+            if (badgeEl) {
+                if (timeRemaining <= 60) {
+                    badgeEl.className = 'flex items-center gap-1.5 bg-rose-100 text-rose-800 border border-rose-300 px-3 py-1 rounded-md animate-pulse font-bold';
+                } else if (timeRemaining <= 180) {
+                    badgeEl.className = 'flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300 px-3 py-1 rounded-md font-bold';
+                } else {
+                    badgeEl.className = 'flex items-center gap-1.5 bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1 rounded-md font-bold';
+                }
+            }
+        }
+
+        function startLevelTimer() {
+            resetLevelTimer();
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                timeElapsedInLevel++;
+                renderTimerHUD();
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    SoundEngine.playBuzzer();
+                    alert('⏱️ WAKTU 10 MENIT HABIS!\nWaktu pengerjaan level ini telah berakhir. Sistem akan mengulang level dengan waktu 10 menit baru.');
+                    
+                    if (currentTab === 'lvl1') initLevel1();
+                    else if (currentTab === 'lvl2') initLevel2();
+                    else if (currentTab === 'lvl3') initLevel3();
+                    startLevelTimer();
+                }
+            }, 1000);
+        }
+
+        function goToTab(tabKey) {
+            SoundEngine.playClick();
+            currentTab = tabKey;
+
+            // Highlight sub-nav
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const activeNav = document.getElementById(`nav-${tabKey}`);
+            if (activeNav) activeNav.classList.add('active');
+
+            // Toggle screens
+            ['lobby', 'lvl1', 'lvl2', 'lvl3'].forEach(s => {
+                document.getElementById(`screen-${s}`).classList.add('hidden');
+            });
+            document.getElementById(`screen-${tabKey}`).classList.remove('hidden');
+
+            // Timer per level (10 Menit Setiap Level)
+            if (['lvl1', 'lvl2', 'lvl3'].includes(tabKey)) {
+                startLevelTimer();
+            } else {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timeRemaining = LEVEL_DURATION;
+                renderTimerHUD();
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-score-val').innerText = totalScore;
+            document.getElementById('hud-lives-val').innerText = `${lives}/3`;
+        }
+
+        /**
+         * ========================================================
+         * 3. LOGIKA LEVEL 1: TOKO ROTI (DATA VS INFORMASI)
+         * ========================================================
+         */
+        const LVL1_ITEMS = [
+            {
+                id: 'k1_1',
+                type: 'data',
+                badge: 'Fakta Mentah',
+                title: 'Kode Catatan: "10029"',
+                desc: 'Hanya angka 10029 tanpa nama pembeli atau kejelasan objek.',
+                reason: 'Merupakan DATA karena fakta mentah yang belum memiliki konteks makna.'
+            },
+            {
+                id: 'k1_2',
+                type: 'info',
+                badge: 'Hasil Olahan',
+                title: 'Struk Diskon: "Budi Ultah Hari Ini (Diskon 50%)"',
+                desc: 'Hasil sistem mencocokkan tanggal lahir pelanggan dengan tanggal hari ini.',
+                reason: 'Merupakan INFORMASI karena telah diproses basis data dan siap dipakai kasir memberikan diskon.'
+            },
+            {
+                id: 'k1_3',
+                type: 'data',
+                badge: 'Fakta Mentah',
+                title: 'Nominal Acak: "Rp 50.000"',
+                desc: 'Hanya angka nominal uang tanpa konteks apakah itu harga roti, utang, atau kembalian.',
+                reason: 'Merupakan DATA karena belum dirangkum atau diberi konteks transaksi.'
+            },
+            {
+                id: 'k1_4',
+                type: 'info',
+                badge: 'Hasil Olahan',
+                title: 'Laporan: "Roti Cokelat Terjual 150 Pcs Hari Ini"',
+                desc: 'Ringkasan penjualan harian untuk manajer toko menentukan stok tepung besok.',
+                reason: 'Merupakan INFORMASI karena memberi pengetahuan untuk perencanaan stok toko roti.'
+            },
+            {
+                id: 'k1_5',
+                type: 'data',
+                badge: 'Fakta Mentah',
+                title: 'Tanggal: "2004-11-17"',
+                desc: 'Catatan tanggal lahir yang tertulis di 1.000 baris buku tebal kasir.',
+                reason: 'Merupakan DATA karena butuh pemrosesan sebelum diketahui apakah ia berulang tahun hari ini.'
+            },
+            {
+                id: 'k1_6',
+                type: 'info',
+                badge: 'Hasil Olahan',
+                title: 'SMS Promo: "Kupon Roti Ultah Terkirim ke 12 Pelanggan"',
+                desc: 'Notifikasi otomatis yang dikirim sistem CRM toko roti ke smartphone pelanggan.',
+                reason: 'Merupakan INFORMASI karena hasil pemanfaatan data terintegrasi yang siap beraksi.'
+            }
+        ];
+
+        let lvl1Cards = [];
+        let countData = 0;
+        let countInfo = 0;
+
+        function initLevel1() {
+            lvl1Cards = [...LVL1_ITEMS].sort(() => Math.random() - 0.5);
+            countData = 0;
+            countInfo = 0;
+            renderLevel1Tray();
+        }
+
+        function renderLevel1Tray() {
+            const tray = document.getElementById('lvl1-cards-tray');
+            tray.innerHTML = '';
+            document.getElementById('lvl1-counter-badge').innerText = `Sisa Kartu: ${lvl1Cards.length}/${LVL1_ITEMS.length}`;
+
+            if (lvl1Cards.length === 0) {
+                tray.innerHTML = `
+                    <div class="py-8 text-center text-emerald-800 bg-emerald-50 rounded border border-emerald-200 p-4">
+                        <strong class="block text-sm">✓ Selesai dengan Tepat!</strong>
+                        <p class="text-[11px] text-emerald-700 mt-1">Seluruh catatan kasir berhasil dipilah antara Data dan Informasi.</p>
+                    </div>
+                `;
+                setTimeout(() => {
+                    showCompletionModal(
+                        "Level 1: Kasus Toko Roti Tuntas!",
+                        "Siswa berhasil memahami perbedaan mendasar fakta mentah (data) dengan data yang telah diolah dan bermakna (informasi).",
+                        "lvl2"
+                    );
+                }, 600);
+                return;
+            }
+
+            lvl1Cards.forEach(item => {
+                const card = document.createElement('div');
+                card.id = item.id;
+                card.draggable = true;
+                card.className = 'game-item-card p-3 rounded-lg text-left';
+
+                if (selectedCardId === item.id) card.classList.add('selected');
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-xs text-gray-900">${item.title}</span>
+                        <span class="text-[9px] bg-gray-100 text-gray-700 border border-gray-300 px-1.5 py-0.2 rounded font-mono">${item.badge}</span>
+                    </div>
+                    <p class="text-[11px] text-gray-600 leading-snug">${item.desc}</p>
+                `;
+
+                card.ondragstart = (e) => {
+                    SoundEngine.playClick();
+                    e.dataTransfer.setData('text/plain', item.id);
+                    selectedCardId = item.id;
+                    card.classList.add('dragging');
+                };
+                card.ondragend = () => card.classList.remove('dragging');
+                card.onclick = () => {
+                    SoundEngine.playClick();
+                    selectedCardId = (selectedCardId === item.id) ? null : item.id;
+                    renderLevel1Tray();
+                };
+
+                tray.appendChild(card);
+            });
+        }
+
+        function onDropLvl1(e, targetZone) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-active');
+            const itemId = e.dataTransfer.getData('text/plain') || selectedCardId;
+            evaluateLvl1(itemId, targetZone);
+        }
+
+        function onClickZoneLvl1(targetZone) {
+            if (!selectedCardId) return;
+            evaluateLvl1(selectedCardId, targetZone);
+        }
+
+        function evaluateLvl1(itemId, targetZone) {
+            const item = lvl1Cards.find(i => i.id === itemId);
+            if (!item) return;
+
+            if (item.type === targetZone) {
+                // TEPAT
+                SoundEngine.playDing();
+                totalScore += 150;
+                updateHUD();
+
+                const slot = (targetZone === 'data') ? document.getElementById('slot-lvl1-data') : document.getElementById('slot-lvl1-info');
+                if (slot.querySelector('span.italic')) slot.innerHTML = '';
+
+                const tag = document.createElement('div');
+                tag.className = 'pop-animation text-[11px] font-bold px-2.5 py-1 rounded bg-[#286090] text-white flex items-center gap-1 shadow-sm';
+                tag.innerHTML = `<span>✓</span> <span>${item.title}</span>`;
+                slot.appendChild(tag);
+
+                if (targetZone === 'data') {
+                    countData++;
+                    document.getElementById('badge-lvl1-data').innerText = `${countData} Diterima`;
+                } else {
+                    countInfo++;
+                    document.getElementById('badge-lvl1-info').innerText = `${countInfo} Diterima`;
+                }
+
+                document.getElementById('lvl1-feedback-text').innerHTML = `
+                    <span class="text-emerald-700 font-bold">Analisis Tepat!</span> ${item.reason}
+                `;
+
+                lvl1Cards = lvl1Cards.filter(i => i.id !== itemId);
+                selectedCardId = null;
+                renderLevel1Tray();
+            } else {
+                // SALAH
+                SoundEngine.playBuzzer();
+                lives--;
+                updateHUD();
+
+                const targetEl = (targetZone === 'data') ? document.getElementById('zone-data') : document.getElementById('zone-info');
+                targetEl.classList.add('shake-animation');
+                setTimeout(() => targetEl.classList.remove('shake-animation'), 400);
+
+                const correctName = (item.type === 'data') ? 'WADAH DATA (FAKTA MENTAH)' : 'WADAH INFORMASI (HASIL OLAHAN)';
+                document.getElementById('lvl1-feedback-text').innerHTML = `
+                    <span class="text-rose-700 font-bold">Kurang Tepat!</span> Catatan "${item.title}" seharusnya masuk ke <strong>${correctName}</strong>. ${item.reason}
+                `;
+
+                if (lives <= 0) {
+                    alert('Toleransi kesalahan habis! Silakan pelajari kembali konsep perbedaan Data dan Informasi.');
+                    lives = 3;
+                    initLevel1();
+                    updateHUD();
+                }
+            }
+        }
+
+        /**
+         * ========================================================
+         * 4. LOGIKA LEVEL 2: 4 PILAR SISTEM BASIS DATA
+         * ========================================================
+         */
+        const LVL2_ITEMS = [
+            {
+                id: 'k2_hw',
+                type: 'hardware',
+                title: '🖥️ Rack Server SSD 4TB',
+                desc: 'Unit perangkat keras prosesor & media penyimpanan berkecepatan tinggi.'
+            },
+            {
+                id: 'k2_sw',
+                type: 'software',
+                title: '⚙️ MySQL Server Engine & OS Linux',
+                desc: 'Perangkat lunak DBMS pengelola query dan transaksi data.'
+            },
+            {
+                id: 'k2_dt',
+                type: 'data',
+                title: '📊 Skema Tabel Pelanggan Terintegrasi',
+                desc: 'Fakta terstruktur yang saling terhubung tanpa duplikasi data ganda.'
+            },
+            {
+                id: 'k2_usr',
+                type: 'user',
+                title: '👥 Database Administrator (DBA)',
+                desc: 'Manusia (Brainware) yang merancang hak akses dan memelihara sistem.'
+            },
+            // JEBAKAN / DISTRACTOR
+            {
+                id: 'k2_trap1',
+                type: 'trap',
+                title: '☕ Secangkir Kopi Panas',
+                desc: 'Cairan di atas meja kerja teknisi laboratorium.',
+                reason: 'Cairan bukan komponen sistem dan berisiko merusak sirkuit server!'
+            },
+            {
+                id: 'k2_trap2',
+                type: 'trap',
+                title: '🗑️ Catatan Ganda (Data Redundan)',
+                desc: 'Salinan data ganda yang tidak terintegrasi.',
+                reason: 'Tujuan utama basis data adalah MENGURANGI redundansi data ganda!'
+            }
+        ];
+
+        let lvl2Cards = [];
+        let lvl2Slots = { hardware: false, software: false, data: false, user: false };
+
+        function initLevel2() {
+            lvl2Cards = [...LVL2_ITEMS].sort(() => Math.random() - 0.5);
+            lvl2Slots = { hardware: false, software: false, data: false, user: false };
+            renderLevel2Tray();
+        }
+
+        function renderLevel2Tray() {
+            const tray = document.getElementById('lvl2-cards-tray');
+            tray.innerHTML = '';
+
+            lvl2Cards.forEach(item => {
+                const card = document.createElement('div');
+                card.id = item.id;
+                card.draggable = true;
+                card.className = 'game-item-card p-3 rounded-lg text-left';
+
+                if (selectedCardId === item.id) card.classList.add('selected');
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-xs text-gray-900">${item.title}</span>
+                        <span class="text-[9px] bg-gray-100 text-gray-600 border border-gray-300 px-1.5 py-0.2 rounded font-mono">Komponen</span>
+                    </div>
+                    <p class="text-[11px] text-gray-600 leading-snug">${item.desc}</p>
+                `;
+
+                card.ondragstart = (e) => {
+                    SoundEngine.playClick();
+                    e.dataTransfer.setData('text/plain', item.id);
+                    selectedCardId = item.id;
+                    card.classList.add('dragging');
+                };
+                card.ondragend = () => card.classList.remove('dragging');
+                card.onclick = () => {
+                    SoundEngine.playClick();
+                    selectedCardId = (selectedCardId === item.id) ? null : item.id;
+                    renderLevel2Tray();
+                };
+
+                tray.appendChild(card);
+            });
+        }
+
+        function onDropLvl2(e, targetSlot) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-active');
+            const itemId = e.dataTransfer.getData('text/plain') || selectedCardId;
+            evaluateLvl2(itemId, targetSlot);
+        }
+
+        function onClickZoneLvl2(targetSlot) {
+            if (!selectedCardId) return;
+            evaluateLvl2(selectedCardId, targetSlot);
+        }
+
+        function evaluateLvl2(itemId, targetSlot) {
+            const item = lvl2Cards.find(i => i.id === itemId);
+            if (!item) return;
+
+            // CEK JEBAKAN
+            if (item.type === 'trap') {
+                SoundEngine.playBuzzer();
+                lives--;
+                updateHUD();
+                alert(`⚠️ PERINGATAN GANGGUAN SISTEM!\n${item.reason}\nToleransi kesalahan berkurang 1.`);
+                if (lives <= 0) {
+                    alert('Sistem server terganggu komponen berbahaya! Mengulang Level 2...');
+                    lives = 3;
+                    initLevel2();
+                    updateHUD();
+                }
+                return;
+            }
+
+            // CEK COCOK
+            if (item.type === targetSlot) {
+                SoundEngine.playDing();
+                totalScore += 200;
+                updateHUD();
+
+                lvl2Slots[targetSlot] = true;
+
+                const shortMap = { hardware: 'hw', software: 'sw', data: 'dt', user: 'usr' };
+                const shortId = shortMap[targetSlot];
+
+                const badge = document.getElementById(`badge-${shortId}`);
+                badge.innerText = 'TERPASANG ✓';
+                badge.className = 'text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold';
+
+                const slotEl = document.getElementById(`slot-${shortId}`);
+                slotEl.innerHTML = `<span class="font-bold text-emerald-800">✓ ${item.title}</span>`;
+                slotEl.className = 'bg-emerald-50 border border-emerald-300 p-2.5 rounded text-center text-xs';
+
+                lvl2Cards = lvl2Cards.filter(i => i.id !== itemId);
+                selectedCardId = null;
+                renderLevel2Tray();
+
+                const count = Object.values(lvl2Slots).filter(Boolean).length;
+                const statusTag = document.getElementById('lvl2-status-badge');
+                if (count === 4) {
+                    statusTag.className = 'bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-bold text-xs px-3 py-1 rounded';
+                    statusTag.innerText = 'Status: 4 Pilar Lengkap & Terkoneksi ✓';
+
+                    setTimeout(() => {
+                        showCompletionModal(
+                            "Level 2: 4 Pilar Sistem Selesai!",
+                            "Siswa berhasil merakit Hardware, Software DBMS, Data terintegrasi, dan Brainware (User) secara lengkap.",
+                            "lvl3"
+                        );
+                    }, 600);
+                } else {
+                    statusTag.innerText = `Status: Terpasang (${count}/4)`;
+                }
+            } else {
+                SoundEngine.playBuzzer();
+                lives--;
+                updateHUD();
+                alert(`Komponen "${item.title}" bukan bagian dari kategori ${targetSlot.toUpperCase()}!`);
+                if (lives <= 0) {
+                    alert('Toleransi kesalahan habis! Silakan ulang kembali.');
+                    lives = 3;
+                    initLevel2();
+                    updateHUD();
+                }
+            }
+        }
+
+        /**
+         * ========================================================
+         * 5. LOGIKA LEVEL 3: KONSULTAN DBMS INDUSTRI
+         * ========================================================
+         */
+        const LVL3_DBMS = [
+            {
+                id: 'mysql',
+                logo: '🐬',
+                title: 'MySQL DBMS',
+                spec: 'Web Open-Source',
+                desc: 'Paling terkenal dan banyak digunakan di ekosistem website e-commerce dan CMS.'
+            },
+            {
+                id: 'sqlite',
+                logo: '📱',
+                title: 'SQLite DBMS',
+                spec: 'Embedded & Serverless',
+                desc: 'Disematkan langsung di dalam file lokal aplikasi smartphone tanpa server mandiri.'
+            },
+            {
+                id: 'postgresql',
+                logo: '🐘',
+                title: 'PostgreSQL DBMS',
+                spec: 'Enterprise Skala Besar',
+                desc: 'Dirancang untuk kehandalan ekstrem, data masif, dan transaksi keuangan kompleks.'
+            }
+        ];
+
+        let lvl3Solved = { mysql: false, sqlite: false, postgresql: false };
+
+        function initLevel3() {
+            lvl3Solved = { mysql: false, sqlite: false, postgresql: false };
+            renderLevel3Tray();
+        }
+
+        function renderLevel3Tray() {
+            const tray = document.getElementById('lvl3-cards-tray');
+            tray.innerHTML = '';
+
+            const available = LVL3_DBMS.filter(d => !lvl3Solved[d.id]);
+            if (available.length === 0) {
+                tray.innerHTML = `
+                    <div class="py-8 text-center text-emerald-800 bg-emerald-50 rounded border border-emerald-200 p-4">
+                        <strong class="block text-sm">✓ Ketiga Mitra Industri Terlayani!</strong>
+                        <p class="text-[11px] text-emerald-700 mt-1">Solusi software DBMS berhasil dipasangkan sesuai kebutuhan arsitektur.</p>
+                    </div>
+                `;
+                setTimeout(() => {
+                    showCompletionModal(
+                        "Seluruh Level Praktik Selesai!",
+                        "Siswa telah menuntaskan seluruh studi kasus: konsep data vs informasi, 4 pilar arsitektur, dan software DBMS industri.",
+                        "lobby"
+                    );
+                }, 600);
+                return;
+            }
+
+            available.forEach(item => {
+                const card = document.createElement('div');
+                card.id = item.id;
+                card.draggable = true;
+                card.className = 'game-item-card p-3 rounded-lg text-left';
+
+                if (selectedCardId === item.id) card.classList.add('selected');
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-lg">${item.logo}</span>
+                            <span class="font-bold text-xs text-gray-900">${item.title}</span>
+                        </div>
+                        <span class="text-[9px] bg-blue-50 text-[#286090] border border-blue-200 px-1.5 py-0.2 rounded font-mono">${item.spec}</span>
+                    </div>
+                    <p class="text-[11px] text-gray-600 leading-snug">${item.desc}</p>
+                `;
+
+                card.ondragstart = (e) => {
+                    SoundEngine.playClick();
+                    e.dataTransfer.setData('text/plain', item.id);
+                    selectedCardId = item.id;
+                    card.classList.add('dragging');
+                };
+                card.ondragend = () => card.classList.remove('dragging');
+                card.onclick = () => {
+                    SoundEngine.playClick();
+                    selectedCardId = (selectedCardId === item.id) ? null : item.id;
+                    renderLevel3Tray();
+                };
+
+                tray.appendChild(card);
+            });
+        }
+
+        function onDropLvl3(e, targetDbms) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-active');
+            const draggedId = e.dataTransfer.getData('text/plain') || selectedCardId;
+            evaluateLvl3(draggedId, targetDbms);
+        }
+
+        function onClickZoneLvl3(targetDbms) {
+            if (!selectedCardId) return;
+            evaluateLvl3(selectedCardId, targetDbms);
+        }
+
+        function evaluateLvl3(chosenId, targetDbms) {
+            if (chosenId === targetDbms) {
+                SoundEngine.playDing();
+                totalScore += 250;
+                updateHUD();
+                lvl3Solved[chosenId] = true;
+
+                let slotId = 'slot-client-web';
+                if (chosenId === 'sqlite') slotId = 'slot-client-mobile';
+                else if (chosenId === 'postgresql') slotId = 'slot-client-enterprise';
+
+                const dbObj = LVL3_DBMS.find(d => d.id === chosenId);
+                const slotEl = document.getElementById(slotId);
+                slotEl.innerHTML = `<span class="font-bold text-emerald-800">✓ ${dbObj.title} Terpasang</span>`;
+                slotEl.className = 'w-full sm:w-48 bg-emerald-50 border border-emerald-300 rounded p-2.5 text-center text-xs font-bold text-emerald-800 flex-shrink-0';
+
+                const count = Object.values(lvl3Solved).filter(Boolean).length;
+                document.getElementById('lvl3-counter-badge').innerText = `Klien Terlayani: ${count}/3`;
+
+                selectedCardId = null;
+                renderLevel3Tray();
+            } else {
+                SoundEngine.playBuzzer();
+                lives--;
+                updateHUD();
+                alert('Pilihan software DBMS kurang cocok dengan skala dan platform perangkat klien ini!');
+                if (lives <= 0) {
+                    alert('Toleransi kesalahan habis! Silakan ulang kembali.');
+                    lives = 3;
+                    initLevel3();
+                    updateHUD();
+                }
+            }
+        }
+
+        /**
+         * ========================================================
+         * 6. MODAL SELESAI & SALIN LAPORAN KE WHATSAPP
+         * ========================================================
+         */
+        let nextDestinationTab = 'lobby';
+
+        function showCompletionModal(title, desc, nextTabKey) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            SoundEngine.playVictoryFanfare();
+            if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 75, origin: { y: 0.6 } });
+
+            nextDestinationTab = nextTabKey;
+            const pName = document.getElementById('player-name-input').value.trim() || 'Siswa Microteaching';
+            const elapsedMins = String(Math.floor(timeElapsedInLevel / 60)).padStart(2, '0');
+            const elapsedSecs = String(timeElapsedInLevel % 60).padStart(2, '0');
+            const remMins = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
+            const remSecs = String(timeRemaining % 60).padStart(2, '0');
+
+            document.getElementById('res-modal-title').innerText = title;
+            document.getElementById('res-modal-desc').innerText = desc;
+            document.getElementById('res-modal-name').innerText = pName;
+            document.getElementById('res-modal-time').innerText = `${elapsedMins}:${elapsedSecs} (Sisa Waktu: ${remMins}:${remSecs} dari 10 Menit)`;
+            document.getElementById('res-modal-score').innerText = `${totalScore} Poin`;
+
+            document.getElementById('modal-victory').classList.remove('hidden');
+        }
+
+        function closeModalAndNext() {
+            SoundEngine.playClick();
+            document.getElementById('modal-victory').classList.add('hidden');
+            goToTab(nextDestinationTab);
+        }
+
+        function copyResultsWhatsApp() {
+            SoundEngine.playClick();
+            const pName = document.getElementById('player-name-input').value.trim() || 'Siswa Microteaching';
+            const pClass = document.getElementById('player-class-input').value.trim() || 'Pendidikan Ilmu Komputer UPI';
+            const elapsedMins = String(Math.floor(timeElapsedInLevel / 60)).padStart(2, '0');
+            const elapsedSecs = String(timeElapsedInLevel % 60).padStart(2, '0');
+            const remMins = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
+            const remSecs = String(timeRemaining % 60).padStart(2, '0');
+
+            const text = `*LAPORAN PRAKTIK BASIS DATA (MICROTEACHING FPMIPA UPI)*
+Nama Siswa   : ${pName}
+Kelas/Prodi  : ${pClass}
+Waktu Selesai: ${elapsedMins}:${elapsedSecs} (Sisa ${remMins}:${remSecs} dari 10 Menit)
+Total Skor   : ${totalScore} Poin
+Status       : Lulus Praktik Arsitektur Basis Data ⭐`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Laporan berhasil disalin ke clipboard! Silakan paste langsung ke WhatsApp guru.');
+            });
+        }
+
+        // Helpers dragover
+        function onDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-active');
+        }
+        function onDragLeave(e) {
+            e.currentTarget.classList.remove('drag-active');
+        }
+
+        function openHelpModal() {
+            SoundEngine.playClick();
+            document.getElementById('modal-help').classList.remove('hidden');
+        }
+        function closeHelpModal() {
+            SoundEngine.playClick();
+            document.getElementById('modal-help').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
